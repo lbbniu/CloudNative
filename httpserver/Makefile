@@ -13,4 +13,10 @@ release: build
 
 push: release
 	echo "pushing lbbniu/httpserver"
-	docker push lbbniu/httpserver:v1.0
+	docker push lbbniu/httpserver:${tag}
+
+lbbniu:
+	echo "building httpserver container"
+	docker build -t lbbniu/httpserver:${tag} -f multi.Dockerfile .
+	echo "pushing lbbniu/httpserver"
+	docker push lbbniu/httpserver:${tag}
