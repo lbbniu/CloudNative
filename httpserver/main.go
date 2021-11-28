@@ -1,16 +1,18 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"github.com/golang/glog"
 	"io"
-	"log"
 	"net"
 	"net/http"
 	"net/http/pprof"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 )
 
 var (
@@ -34,9 +36,23 @@ func main() {
 	mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 	flag.Set("v", "4")
 	glog.V(2).Info("Starting http server...")
-	err := http.ListenAndServe(":80", mux)
-	if err != nil {
-		log.Fatal(err)
+	server := &http.Server{
+		Addr:    ":800",
+		Handler: mux,
+	}
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			glog.V(1).Info(err)
+		}
+	}()
+	quitChan := make(chan os.Signal)
+	signal.Notify(quitChan, syscall.SIGTERM)
+	select {
+	case <-quitChan:
+		glog.V(2).Info("http server shutdown ... ")
+		if err := server.Shutdown(context.Background()); err != nil {
+			glog.V(1).Info(err)
+		}
 	}
 }
 
